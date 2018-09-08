@@ -4,4 +4,4 @@
 ## releases
 
 ### v1.0.0
-- training of pipelines
+- creating release branch for testing
