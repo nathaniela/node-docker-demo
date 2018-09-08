@@ -7,3 +7,6 @@
 
 ### v1.0.0
 - training of pipelines
+
+### v1.0.1
+- minor release test
