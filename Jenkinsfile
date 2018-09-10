@@ -44,7 +44,7 @@ pipeline {
           script {
             // building docker image only if branch is either development or release (staging)
             if ( "${GIT_BRANCH_TYPE}" == 'feature' || "${GIT_BRANCH_TYPE}" == 'release' ) { // TODO: change to dev
-              image = docker.build("${registry}")
+              image = docker.build("${env.registry}")
             }
           }
       }
@@ -59,7 +59,7 @@ pipeline {
           script {
             if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
               echo "Pushing docker image to ${registry} from release branch."
-              docker.withRegistry("${registry}", '${registryCredential}') {
+              docker.withRegistry("${env.registry}", '${env.registryCredential}') {
                 image.push("${GIT_BRANCH}-${GIT_COMMIT}")
               }
             }
