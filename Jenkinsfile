@@ -11,9 +11,15 @@ pipeline {
   stages {
     stage('Setup') {
       steps {
-        echo "Check out code"
         script {
+          echo "Check out code"
           scmVars = checkout scm
+
+          GIT_BRANCH_TYPE = get_branch_type("${scmVars.GIT_BRANCH}")
+          echo "GIT_BRANCH_TYPE is: ${GIT_BRANCH_TYPE}"
+
+          DEPLOY_ENV = get_branch_deployment_environment("${GIT_BRANCH_TYPE}")
+          echo "DEPLOY_ENV is: ${DEPLOY_ENV}"
         }
       }
     }
