@@ -128,12 +128,12 @@ def check_merge_source_details() {
     If the commit is a result of a Merge,
     it will return the commit id and the branch name which are the source of the merge.
     */
-    SRC_BRANCH = sh (
-      script: "git branch --contains ${SRC_COMMIT} | grep -v master",
+    SRC_COMMIT = sh (
+      script: "git show --summary HEAD | grep ^Merge: | awk '{print \$3}'",
       returnStdout: true
       ).trim()
-    SRC_COMMIT = sh (
-      script: "git show --summary HEAD | grep ^Merge: | awk '{print $3}'",
+    SRC_BRANCH = sh (
+      script: "git branch --contains ${SRC_COMMIT} | grep -v master",
       returnStdout: true
       ).trim()
     return ["${SRC_BRANCH}, ${SRC_COMMIT}"]
