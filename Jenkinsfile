@@ -44,7 +44,7 @@ pipeline {
           script {
             // building docker image only if branch is either development or release (staging)
             if ( "${GIT_BRANCH_TYPE}" == 'feature' || "${GIT_BRANCH_TYPE}" == 'release' ) { // TODO: change to dev
-              image = docker.build("${env.registry}")
+              image = docker.build("${env.registry}:${GIT_COMMIT}")
             }
           }
       }
