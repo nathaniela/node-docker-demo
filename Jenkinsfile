@@ -6,7 +6,7 @@ pipeline {
   }
 
   environment {
-    registry = "https://hub.docker.com/r/nathanielassis/node-docker-demo/"
+    registry = "nathanielassis/node-docker-demo"
     registryCredential = 'dockerhub'
   }
 
@@ -59,7 +59,7 @@ pipeline {
           script {
             if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
               echo "Pushing docker image to ${registry} from release branch."
-              docker.withRegistry("${env.registry}", "${env.registryCredential}") {
+              docker.withRegistry("https://hub.docker.com/r/${env.registry}", "${env.registryCredential}") {
                 image.push("${GIT_BRANCH}-${GIT_COMMIT}")
               }
             }
