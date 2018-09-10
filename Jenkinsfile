@@ -6,7 +6,7 @@ pipeline {
   }
 
   environment {
-    registry = "nathanielassis/node-docker-demo"
+    registry = "https://hub.docker.com/r/nathanielassis/node-docker-demo/"
     registryCredential = 'dockerhub'
   }
 
