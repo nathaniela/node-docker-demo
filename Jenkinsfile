@@ -59,7 +59,7 @@ pipeline {
           script {
             if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
               echo "Pushing docker image to ${registry} from release branch."
-              docker.withRegistry("https://${env.registry}", "${env.registryCredential}") {
+              docker.withRegistry("${env.registry}", "${env.registryCredential}") {
                 image.push("${GIT_BRANCH}-${GIT_COMMIT}")
               }
             }
