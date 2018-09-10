@@ -20,6 +20,16 @@ pipeline {
 
           DEPLOY_ENV = get_branch_deployment_environment("${GIT_BRANCH_TYPE}")
           echo "DEPLOY_ENV is: ${DEPLOY_ENV}"
+
+          GIT_TAG = "${scmVars.GIT_TAG}"
+          echo "GIT_TAG is: ${GIT_TAG}"
+
+          GIT_COMMIT = sh (
+            script: "git rev-parse --short HEAD",
+            returnStdout: true
+            ).trim()
+          echo "GIT_COMMIT is: ${GIT_COMMIT}"
+
         }
       }
     }
