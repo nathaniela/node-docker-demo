@@ -144,9 +144,10 @@ def check_merge_commit() {
     If the commit is a result of a Merge,
     it will return the commit id and the branch name which are the source of the merge.
     */
-    if (`git show --summary HEAD | grep -q ^Merge:`) {
-        return true
-    } else {
-        return false
-    }
+    merge = sh (
+      script: "git show --summary HEAD | grep -q ^Merge:",
+      returnStatus: true
+      ) = 0
+
+    return "${merge}"
 }
