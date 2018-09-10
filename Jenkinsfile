@@ -29,6 +29,12 @@ pipeline {
           GIT_TAG = "${scmVars.GIT_TAG}"
           echo "GIT_TAG is: ${GIT_TAG}"
 
+          GIT_BRANCH = sh (
+            script: "echo ${scmVars.GIT_BRANCH} | cut -d '/' -f 2",
+            returnStdout: true
+          ).trim()
+          echo "GIT_BRANCH is: ${GIT_BRANCH}"
+
           GIT_COMMIT = sh (
             script: "git rev-parse --short HEAD",
             returnStdout: true
@@ -60,7 +66,8 @@ pipeline {
             if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
               echo "Pushing docker image to ${registry} from release branch."
               docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-                image.push("${GIT_BRANCH}-${GIT_COMMIT}")
+                /* rc - release candidate */
+                image.push("rc-${GIT_BRANCH}-${GIT_COMMIT}")
               }
             }
           }
