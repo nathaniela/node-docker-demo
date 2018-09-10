@@ -147,7 +147,7 @@ def check_merge_commit() {
     merge = sh (
       script: "git show --summary HEAD | grep -q ^Merge:",
       returnStatus: true
-      ) = 0
+      ) == 0
 
     return "${merge}"
 }
