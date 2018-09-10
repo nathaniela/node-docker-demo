@@ -5,6 +5,11 @@ pipeline {
     timeout(time: 60, unit: 'MINUTES')
   }
 
+  environment {
+    registry = "nathanielassis/node-docker-demo"
+    registryCredential = 'dockerhub'
+  }
+
   agent { node { label 'master' } }
 
   // Pipeline stages
@@ -32,6 +37,22 @@ pipeline {
 
         }
       }
+    }
+    stage('Build image') {
+      steps {
+          echo "Building application and Docker image"
+          script {
+            // building docker image only if branch is either development or release (staging)
+            if ( "${GIT_BRANCH_TYPE}" == 'feature' || "${GIT_BRANCH_TYPE}" == 'release' ) { // TODO: change to dev
+              image = docker.build("${registry}")
+            }
+          }
+      }
+    }
+    stage('Test image') {
+        steps {
+          echo 'echo "Add tests here"'
+        }
     }
   }
 }
