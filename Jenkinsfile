@@ -67,9 +67,9 @@ pipeline {
         steps {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-              if ( "${GIT_BRANCH_TYPE} == 'master' && check_merge_commit() && ${GIT_TAG} != ''") {
+              if ( "${GIT_BRANCH_TYPE} == 'master' && check_merge_commit() && ${GIT_TAG} is not null") {
                 image.push("${GIT_TAG}")
-              } else if ( "${GIT_BRANCH_TYPE}" == 'master' && "${GIT_TAG}" == '' ) {
+              } else if ( "${GIT_BRANCH_TYPE}" == 'master' && "${GIT_TAG}" is null ) {
                 echo "WARNING: commit on master branch without a release TAG, doing nothing."
               }
               if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
