@@ -44,6 +44,7 @@ pipeline {
         }
       }
     }
+
     stage('Build image') {
       steps {
           echo "Building application and Docker image"
@@ -55,19 +56,30 @@ pipeline {
           }
       }
     }
+
     stage('Test image') {
         steps {
           echo 'echo "Add tests here"'
         }
     }
+
     stage('Push image') {
         steps {
           script {
-            if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
-              echo "Pushing docker image to ${registry} from release branch."
-              docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
+            docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
+              if ( "${GIT_BRANCH_TYPE}" == 'master' && "${GIT_TAG}" != '' ) {
+                image.push("${GIT_TAG}")
+              } else if ( "${GIT_BRANCH_TYPE}" == 'master' && "${GIT_TAG}" == '' ) {
+                  echo "WARNING: commit on master branch without a release TAG, doing nothing."
+              }
+              if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
+                echo "Pushing docker image to ${registry} from release branch."
                 /* rc - release candidate */
                 image.push("rc-${GIT_BRANCH}-${GIT_COMMIT}")
+              }
+              if ( "${GIT_BRANCH_TYPE}" == 'dev' ) {
+                echo "Pushing docker image to ${registry} from develop branch."
+                image.push("dev-${GIT_BRANCH}-${GIT_COMMIT}")
               }
             }
           }
@@ -108,5 +120,19 @@ def get_branch_deployment_environment(String branch_type) {
         return "prod"
     } else {
         return null;
+    }
+}
+
+def check_merge_source_details() {
+    /*
+    If the commit is a result of a Merge,
+    it will return the commit id and the branch name which are the source of the merge.
+    */
+    if (`git show --summary HEAD | grep -q ^Merge:`) {
+        SRC_COMMIT=`git show --summary HEAD | grep ^Merge: | awk '{print $3}'`
+        SRC_BRANCH=`git branch --contains ${SRC_COMMIT} | grep -v master`
+        return ["${SRC_BRANCH}, ${SRC_COMMIT}"]
+    } else {
+        return "NOT_MERGE_COMMIT"
     }
 }
