@@ -54,6 +54,18 @@ pipeline {
           echo 'echo "Add tests here"'
         }
     }
+    stage('Push image') {
+        steps {
+          script {
+            if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
+              echo "Pushing docker image to ${registry} from release branch."
+              docker.withRegistry("${registry}", 'registryCredential') {
+                image.push("${GIT_BRANCH}-${GIT_COMMIT}")
+              }
+            }
+          }
+        }
+    }
   }
 }
 
