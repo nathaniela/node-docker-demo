@@ -67,7 +67,7 @@ pipeline {
         steps {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-              if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()" && "${GIT_TAG}" is not null) {
+              if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()" && "${GIT_TAG}" != null) {
                 echo "GIT_BRANCH_TYPE is: "
                 src_commit = get_merge_source_commit()
                 src_branch = get_branch_by_commit("${src_commit}")
@@ -75,7 +75,7 @@ pipeline {
                 image = docker.image("${src_branch}-${src_commit}")
                 image.pull()
                 image.push("${GIT_TAG}")
-              } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} is null" ) {
+              } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} == null" ) {
                 echo "WARNING: commit on master branch without a release TAG, doing nothing."
               }
               if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
