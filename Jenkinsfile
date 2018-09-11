@@ -81,10 +81,7 @@ pipeline {
                   returnStdout: true
                 ).trim()
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${gitReleaseTag}"
-                def image = docker.image("${env.registry}:rc-${src_branch_short_name}-${src_commit}");
-                image.pull();
-                image.push("registry.hub.docker.com/${env.registry}:${gitReleaseTag}")
-                //tag the container with the release tag.
+                docker.image("${env.registry}:rc-${src_branch_short_name}-${src_commit}").push('latest')
                 //pullAndPushImage("${env.registry}:rc-${src_branch_short_name}-${src_commit}", "${env.registry}:${gitReleaseTag}")
 
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${gitReleaseTag} == null" ) {
@@ -208,9 +205,8 @@ def pullAndPushImage(source, target){
 
   //if (repoHasTaggedImage(target) == true)
   //  return true
-  docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-    sh "docker pull ${source}"
-    sh "docker tag ${source} ${target}"
-    sh "docker push ${target}"
-  }
+  sh "docker login -u nathanielassis -p ${DOCKER_PASSWORD}"
+  sh "docker pull ${source}"
+  sh "docker tag ${source} ${target}"
+  sh "docker push ${target}"
 }
