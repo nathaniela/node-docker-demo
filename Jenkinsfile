@@ -200,12 +200,13 @@ def pullAndPushImage(source, target){
 
   //if (repoHasTaggedImage(target) == true)
   //  return true
-
-  try {
-    sh "docker pull ${source}"
-    sh "docker tag ${source} ${target}"
-    sh "docker push ${target}"
-  } finally {
-    sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
+  docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
+    try {
+      sh "docker pull ${source}"
+      sh "docker tag ${source} ${target}"
+      sh "docker push ${target}"
+    } finally {
+      sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
+    }
   }
 }
