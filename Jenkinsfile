@@ -72,8 +72,12 @@ pipeline {
               if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()" && "${GIT_TAG}" != null) {
                 src_commit = get_merge_source_commit()
                 src_branch = get_branch_by_commit("${src_commit}")
+                src_branch_short_name = sh (
+                  script: "echo ${src_branch} | cut -d '/' -f 2",
+                  returnStdout: true
+                ).trim()
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${GIT_TAG}"
-                image = docker.image("${src_branch}-${src_commit}")
+                image = docker.image("rc-${src_branch_short_name}-${src_commit}")
                 image.pull()
                 image.push("${GIT_TAG}")
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} == null" ) {
