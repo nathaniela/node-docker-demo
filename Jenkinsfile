@@ -67,12 +67,16 @@ pipeline {
         steps {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-              if ( "${GIT_BRANCH_TYPE} == 'master' && check_merge_commit() && ${GIT_TAG} is not null") {
-                (src_branch, src_commit) = check_merge_source_details()
-                image = docker.pull(${src_branch}-${src_commit})
+              if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()" && "${GIT_TAG}" != null) {
+                echo "GIT_BRANCH_TYPE is: "
+                src_commit = get_merge_source_commit()
+                src_branch = get_branch_by_commit("${src_commit}")
+                echo "Please notice the source commit (${src_commit}) and the source branch (${src_branch})"
+                image = docker.image("${src_branch}-${src_commit}")
+                image.pull()
                 image.push("${GIT_TAG}")
-              } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} is null" ) {
-                echo "WARNING: commit on master branch without a release TAG, doing nothing."
+              } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} == null" ) {
+                echo "WARNING: no release TAG found, doing nothing."
               }
               if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
                 echo "Pushing docker image to ${registry} from release branch."
@@ -125,20 +129,24 @@ def get_branch_deployment_environment(String branch_type) {
     }
 }
 
-def check_merge_source_details() {
+def get_merge_source_commit() {
+  src_commit = sh (
+    script: "git show --summary HEAD | grep ^Merge: | awk \'{print \$3}\'",
+    returnStdout: true
+    ).trim()
+  return "${src_commit}"
+}
+
+def get_branch_by_commit(src_commit) {
     /*
-    If the commit is a result of a Merge,
-    it will return the commit id and the branch name which are the source of the merge.
+    Find the source branch of a commit
+    We exclude the master branch as it will always appear as part of the merge commit
     */
-    SRC_COMMIT = sh (
-      script: "git show --summary HEAD | grep ^Merge: | awk '{print \$3}'",
+    src_branch = sh (
+      script: "git branch --contains ${src_commit} | grep -v master",
       returnStdout: true
       ).trim()
-    SRC_BRANCH = sh (
-      script: "git branch --contains ${SRC_COMMIT} | grep -v master",
-      returnStdout: true
-      ).trim()
-    return ["${SRC_BRANCH}, ${SRC_COMMIT}"]
+    return "${src_branch}"
 }
 
 def check_merge_commit() {
