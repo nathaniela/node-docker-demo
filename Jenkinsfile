@@ -85,7 +85,7 @@ pipeline {
               }
               if ( "${GIT_BRANCH_TYPE}" == 'dev' ) {
                 echo "Pushing docker image to ${registry} from develop branch."
-                image.push("dev-${GIT_BRANCH}-${GIT_COMMIT}")
+                image.push("${GIT_BRANCH_TYPE}-${GIT_COMMIT}")
               }
             }
           }
