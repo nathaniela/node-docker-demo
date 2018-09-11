@@ -78,7 +78,7 @@ pipeline {
                   returnStdout: true
                 ).trim()
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${GIT_TAG}"
-                image = docker.image("${env.registry}:rc-${src_branch_short_name}-${src_commit}")
+                def image = docker.image("${env.registry}:rc-${src_branch_short_name}-${src_commit}")
                 image.pull()
                 image.push("${GIT_TAG}")
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} == null" ) {
