@@ -68,6 +68,8 @@ pipeline {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
               if ( "${GIT_BRANCH_TYPE} == 'master' && check_merge_commit() && ${GIT_TAG} is not null") {
+                (src_branch, src_commit) = check_merge_source_details()
+                image = docker.pull(${src_branch}-${src_commit})
                 image.push("${GIT_TAG}")
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} is null" ) {
                 echo "WARNING: commit on master branch without a release TAG, doing nothing."
