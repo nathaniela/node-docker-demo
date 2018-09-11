@@ -76,7 +76,7 @@ pipeline {
                 image.pull()
                 image.push("${GIT_TAG}")
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} == null" ) {
-                echo "WARNING: commit on master branch without a release TAG, doing nothing."
+                echo "WARNING: no release TAG found, doing nothing."
               }
               if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
                 echo "Pushing docker image to ${registry} from release branch."
