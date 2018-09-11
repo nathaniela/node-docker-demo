@@ -71,7 +71,7 @@ pipeline {
                 echo "GIT_BRANCH_TYPE is: "
                 src_commit = get_merge_source_commit()
                 src_branch = get_branch_by_commit("${src_commit}")
-                echo "Please notice the source commit (${src_commit}) and the source branch (${src_branch})"
+                echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${GIT_TAG}"
                 image = docker.image("${src_branch}-${src_commit}")
                 image.pull()
                 image.push("${GIT_TAG}")
