@@ -72,7 +72,7 @@ pipeline {
         steps {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-              if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()" && "${}" != null) {
+              if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()") {
                 src_commit = get_merge_source_commit()
                 //src_branch = get_branch_by_commit("${src_commit}")
                 src_branch = 'release/v1.0.1'
@@ -81,8 +81,11 @@ pipeline {
                   returnStdout: true
                 ).trim()
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${gitReleaseTag}"
+                def image = docker.image("${env.registry}:rc-${src_branch_short_name}-${src_commit}");
+                image.pull();
+                image.push("${gitReleaseTag}")
                 //tag the container with the release tag.
-                pullAndPushImage("${env.registry}:rc-${src_branch_short_name}-${src_commit}", "${env.registry}:${gitReleaseTag}")
+                //pullAndPushImage("${env.registry}:rc-${src_branch_short_name}-${src_commit}", "${env.registry}:${gitReleaseTag}")
 
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${gitReleaseTag} == null" ) {
                 echo "WARNING: no release TAG found, doing nothing."
