@@ -50,8 +50,10 @@ pipeline {
           echo "Building application and Docker image"
           script {
             // building docker image only if branch is either development or release (staging)
-            if ( "${GIT_BRANCH_TYPE}" == 'feature' || "${GIT_BRANCH_TYPE}" == 'release' ) { // TODO: change to dev
+            if ( "${GIT_BRANCH_TYPE}" == 'dev' || "${GIT_BRANCH_TYPE}" == 'release' ) { // TODO: change to dev
               image = docker.build("${env.registry}")
+            } else {
+              echo "Only develop, release branches run docker build, skipping."
             }
           }
       }
