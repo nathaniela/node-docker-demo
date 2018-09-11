@@ -6,4 +6,7 @@
 ## releases
 
 ### v1.0.0
-- creating release branch for testing
+- develop branch pipeline flow.
+
+### v1.0.1
+- release branch pipeline flow.

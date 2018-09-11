@@ -50,8 +50,10 @@ pipeline {
           echo "Building application and Docker image"
           script {
             // building docker image only if branch is either development or release (staging)
-            if ( "${GIT_BRANCH_TYPE}" == 'feature' || "${GIT_BRANCH_TYPE}" == 'release' ) { // TODO: change to dev
+            if ( "${GIT_BRANCH_TYPE}" == 'dev' || "${GIT_BRANCH_TYPE}" == 'release' ) { // TODO: change to dev
               image = docker.build("${env.registry}")
+            } else {
+              echo "Only develop, release branches run docker build, skipping."
             }
           }
       }
@@ -71,7 +73,7 @@ pipeline {
                 echo "GIT_BRANCH_TYPE is: "
                 src_commit = get_merge_source_commit()
                 src_branch = get_branch_by_commit("${src_commit}")
-                echo "Please notice the source commit (${src_commit}) and the source branch (${src_branch})"
+                echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${GIT_TAG}"
                 image = docker.image("${src_branch}-${src_commit}")
                 image.pull()
                 image.push("${GIT_TAG}")
@@ -85,7 +87,7 @@ pipeline {
               }
               if ( "${GIT_BRANCH_TYPE}" == 'dev' ) {
                 echo "Pushing docker image to ${registry} from develop branch."
-                image.push("dev-${GIT_BRANCH}-${GIT_COMMIT}")
+                image.push("${GIT_BRANCH_TYPE}-${GIT_COMMIT}")
               }
             }
           }
