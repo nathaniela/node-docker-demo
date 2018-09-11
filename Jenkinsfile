@@ -69,7 +69,7 @@ pipeline {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
               if ( "${GIT_BRANCH_TYPE} == 'master' && check_merge_commit() && ${GIT_TAG} is not null") {
                 (src_branch, src_commit) = check_merge_source_details()
-                image = docker.pull(${src_branch}-${src_commit})
+                image = docker.pull("${src_branch}-${src_commit}")
                 image.push("${GIT_TAG}")
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} is null" ) {
                 echo "WARNING: commit on master branch without a release TAG, doing nothing."
@@ -131,14 +131,14 @@ def check_merge_source_details() {
     it will return the commit id and the branch name which are the source of the merge.
     */
     SRC_COMMIT = sh (
-      script: "git show --summary HEAD | grep ^Merge: | awk '{print \$3}'",
+      script: "git show --summary HEAD | grep ^Merge: | awk \'{print \$3}\'",
       returnStdout: true
       ).trim()
     SRC_BRANCH = sh (
       script: "git branch --contains ${SRC_COMMIT} | grep -v master",
       returnStdout: true
       ).trim()
-    return ["${SRC_BRANCH}, ${SRC_COMMIT}"]
+    return ["${SRC_BRANCH}", "${SRC_COMMIT}"]
 }
 
 def check_merge_commit() {
