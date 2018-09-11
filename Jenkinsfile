@@ -26,8 +26,11 @@ pipeline {
           DEPLOY_ENV = get_branch_deployment_environment("${GIT_BRANCH_TYPE}")
           echo "DEPLOY_ENV is: ${DEPLOY_ENV}"
 
-          GIT_TAG = "${scmVars.GIT_TAG}"
-          echo "GIT_TAG is: ${GIT_TAG}"
+          gitReleaseTag = sh (
+            script: "git describe --tags --abbrev=0",
+            returnStdout: true
+            ).trim()
+          echo "gitReleaseTag is: ${gitReleaseTag}"
 
           GIT_BRANCH = sh (
             script: "echo ${scmVars.GIT_BRANCH} | cut -d '/' -f 2",
