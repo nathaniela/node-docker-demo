@@ -164,8 +164,10 @@ def check_merge_commit() {
     If the commit is a result of a Merge,
     it will return the commit id and the branch name which are the source of the merge.
     */
+    echo "check_merge_commit: Checking if commit is part of a Merge."
     def merge = sh returnStatus: true, script: "git show --summary HEAD | grep -q ^Merge:"
 
+    echo "check_merge_commit: is commit part of a Merge, ${merge}"
     return "${merge}"
 }
 
@@ -204,12 +206,8 @@ def pullAndPushImage(source, target){
   //if (repoHasTaggedImage(target) == true)
   //  return true
   docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-    try {
-      sh "docker pull ${source}"
-      sh "docker tag ${source} ${target}"
-      sh "docker push ${target}"
-    } finally {
-      sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
-    }
+    sh "docker pull ${source}"
+    sh "docker tag ${source} ${target}"
+    sh "docker push ${target}"
   }
 }
