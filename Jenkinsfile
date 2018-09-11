@@ -67,7 +67,8 @@ pipeline {
         steps {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-              if ( "${GIT_BRANCH_TYPE} == 'master' && check_merge_commit() && ${GIT_TAG} is not null") {
+              if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()" && "${GIT_TAG}" is not null) {
+                echo "GIT_BRANCH_TYPE is: "
                 src_commit = get_merge_source_commit()
                 src_branch = get_branch_by_commit("${src_commit}")
                 echo "Please notice the source commit (${src_commit}) and the source branch (${src_branch})"
