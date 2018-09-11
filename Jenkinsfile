@@ -50,7 +50,7 @@ pipeline {
           echo "Building application and Docker image"
           script {
             // building docker image only if branch is either development or release (staging)
-            if ( "${GIT_BRANCH_TYPE}" == 'dev' || "${GIT_BRANCH_TYPE}" == 'release' ) { // TODO: change to dev
+            if ( "${GIT_BRANCH_TYPE}" == 'dev' || "${GIT_BRANCH_TYPE}" == 'release' ) {
               image = docker.build("${env.registry}")
             } else {
               echo "Only develop, release branches run docker build, skipping."
@@ -78,9 +78,9 @@ pipeline {
                   returnStdout: true
                 ).trim()
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${GIT_TAG}"
-                def image = docker.image("${env.registry}:rc-${src_branch_short_name}-${src_commit}")
-                image.pull()
-                image.push("${GIT_TAG}")
+                //tag the container with the release tag.
+                pullAndPushImage("${env.registry}:rc-${src_branch_short_name}-${src_commit}", "${env.registry}:${GIT_TAG}")
+
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} == null" ) {
                 echo "WARNING: no release TAG found, doing nothing."
               }
@@ -167,4 +167,48 @@ def check_merge_commit() {
       ) == 0
 
     return "${merge}"
+}
+
+/**
+ * If a production tag is found see if it is found in the ecr repository.
+*/
+Boolean repoHasTaggedImage(String target) {
+  // deconstruct target
+  // todo would be better to have these variables passed to the function
+  (ecrEndpoint, tag) = target.split(':')
+  region = ecrEndpoint.split(/\./)[3]
+  repository = ecrEndpoint.split('/')[1]
+
+    // check if the image exists
+  try {
+      image = sh(
+          returnStdout: true,
+          script: "aws ecr describe-images \
+          --profile=liveperson_prod \
+          --repository-name=${repository} \
+          --region=${region} \
+          --image-ids=\"imageTag=${tag}\""
+          )
+      // return without pushing and pulling
+      echo "Image found:"
+      echo image
+      return true
+  } catch (Exception e) {
+      echo "Image not found in repository."
+  }
+  return false
+}
+
+def pullAndPushImage(source, target){
+
+  if (repoHasTaggedImage(target) == true)
+    return true
+
+  try {
+    sh "docker pull ${source}"
+    sh "docker tag ${source} ${target}"
+    sh "docker push ${target}"
+  } finally {
+    sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
+  }
 }
