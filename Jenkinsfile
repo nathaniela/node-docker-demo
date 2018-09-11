@@ -201,8 +201,8 @@ Boolean repoHasTaggedImage(String target) {
 
 def pullAndPushImage(source, target){
 
-  if (repoHasTaggedImage(target) == true)
-    return true
+  //if (repoHasTaggedImage(target) == true)
+  //  return true
 
   try {
     sh "docker pull ${source}"
