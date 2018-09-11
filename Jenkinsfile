@@ -83,7 +83,7 @@ pipeline {
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${gitReleaseTag}"
                 def image = docker.image("${env.registry}:rc-${src_branch_short_name}-${src_commit}");
                 image.pull();
-                image.push("${gitReleaseTag}")
+                image.push("registry.hub.docker.com/${env.registry}:${gitReleaseTag}")
                 //tag the container with the release tag.
                 //pullAndPushImage("${env.registry}:rc-${src_branch_short_name}-${src_commit}", "${env.registry}:${gitReleaseTag}")
 
