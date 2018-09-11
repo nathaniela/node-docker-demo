@@ -27,7 +27,7 @@ pipeline {
           echo "DEPLOY_ENV is: ${DEPLOY_ENV}"
 
           gitReleaseTag = sh (
-            script: "git describe --tags --abbrev=0",
+            script: "git describe --tags --abbrev=0 --always",
             returnStdout: true
             ).trim()
           echo "gitReleaseTag is: ${gitReleaseTag}"
