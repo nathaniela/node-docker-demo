@@ -70,7 +70,7 @@ pipeline {
               if ( "${GIT_BRANCH_TYPE} == 'master' && check_merge_commit() && ${GIT_TAG} is not null") {
                 src_commit = get_merge_source_commit()
                 src_branch = get_branch_by_commit("${src_commit}")
-
+                echo "Please notice the source commit (${src_commit}) and the source branch (${src_branch})"
                 image = docker.pull("${src_branch}-${src_commit}")
                 image.push("${GIT_TAG}")
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${GIT_TAG} is null" ) {
