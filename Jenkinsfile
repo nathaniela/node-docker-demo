@@ -147,6 +147,7 @@ def get_branch_by_commit(src_commit) {
       script: "git branch --contains ${src_commit} | grep -v master",
       returnStdout: true
       ).trim()
+    echo "Source branch found: ${src_branch}"
     return "${src_branch}"
 }
 
