@@ -86,7 +86,7 @@ pipeline {
                     sh "docker login -u nathanielassis -p ${PW1} https://registry.hub.docker.com"
                     sh "docker pull ${registry}:rc-${src_branch_short_name}-${src_commit}"
                     sh "docker tag ${registry}:rc-${src_branch_short_name}-${src_commit} ${registry}:${src_branch_short_name}"
-                    sh "docker push ${registry}:${src_branch_short_name}"
+                    sh "docker push https://registry.hub.docker.com/${registry}:${src_branch_short_name}"
                   } finally {
                     sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
                   }
