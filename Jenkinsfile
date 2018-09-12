@@ -74,12 +74,11 @@ pipeline {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
               if ( "${GIT_BRANCH_TYPE}" == 'master' && "${check_merge_commit()}") {
                 src_commit = get_merge_source_commit()
-                src_branch = sh "${WORKSPACE}/scripts/get_branch_by_commit.sh ${src_commit}"
-
-                src_branch_short_name = sh (
+                src_branch = get_branch_by_commit("${src_commit}")
+                /*src_branch_short_name = sh (
                   script: "echo ${src_branch} | cut -d '/' -f 2",
                   returnStdout: true
-                ).trim()
+                ).trim()*/
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${gitReleaseTag}"
                 withCredentials([string(credentialsId: 'docker-registry-password', variable: 'PW1')]) {
                   try {
@@ -158,10 +157,13 @@ def get_merge_source_commit() {
 
 def get_branch_by_commit(src_commit) {
     /*
-    Find the source branch of a commit
+    Find the source branch of a commit which is the source of a pull request
     We exclude the master branch as it will always appear as part of the merge commit
     */
-    def out = sh script: "git branch --contains ${src_commit} | grep -v master", returnStdout: true
+    def out = sh (
+      script: "git show --summary HEAD | grep 'pull request' | cut -d '/' -f 3",
+      returnStdout: true
+    ).trim()
     /*src_branch = sh (
       script: "git branch --contains ${src_commit} | grep -v master",
       returnStdout: true
@@ -181,44 +183,4 @@ def check_merge_commit() {
     /* TODO: if merge == 0 then log 'true' elase log 'false' */
     echo "check_merge_commit: is commit part of a Merge, ${merge}"
     return "${merge}"
-}
-
-/**
- * If a production tag is found see if it is found in the ecr repository.
-*/
-Boolean repoHasTaggedImage(String target) {
-  // deconstruct target
-  // todo would be better to have these variables passed to the function
-  (ecrEndpoint, tag) = target.split(':')
-  region = ecrEndpoint.split(/\./)[3]
-  repository = ecrEndpoint.split('/')[1]
-
-    // check if the image exists
-  try {
-      image = sh(
-          returnStdout: true,
-          script: "aws ecr describe-images \
-          --profile=liveperson_prod \
-          --repository-name=${repository} \
-          --region=${region} \
-          --image-ids=\"imageTag=${tag}\""
-          )
-      // return without pushing and pulling
-      echo "Image found:"
-      echo image
-      return true
-  } catch (Exception e) {
-      echo "Image not found in repository."
-  }
-  return false
-}
-
-def pullAndPushImage(source, target){
-
-  //if (repoHasTaggedImage(target) == true)
-  //  return true
-  sh "docker login -u nathanielassis -p ${DOCKER_PASSWORD}"
-  sh "docker pull ${source}"
-  sh "docker tag ${source} ${target}"
-  sh "docker push ${target}"
 }
