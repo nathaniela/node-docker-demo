@@ -160,14 +160,13 @@ def get_branch_by_commit(src_commit) {
     Find the source branch of a commit
     We exclude the master branch as it will always appear as part of the merge commit
     */
-    echo "git branch --contains ${src_commit}"
     def out = sh script: "git branch --contains ${src_commit} | grep -v master", returnStdout: true
     /*src_branch = sh (
       script: "git branch --contains ${src_commit} | grep -v master",
       returnStdout: true
       ).trim()
     */
-    echo "get_branch_by_commit: source branch is: ${src_branch}"
+    echo "get_branch_by_commit: source branch is: ${out}"
     return "${src_branch}"
 }
 
