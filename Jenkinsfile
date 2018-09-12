@@ -74,7 +74,7 @@ pipeline {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
               if ( "${GIT_BRANCH_TYPE}" == 'master' && "${check_merge_commit()}") {
                 src_commit = get_merge_source_commit()
-                src_branch = sh "${WORKSPACE}/scipts/get_branch_by_commit.sh ${src_commit}"
+                src_branch = sh "${WORKSPACE}/scripts/get_branch_by_commit.sh ${src_commit}"
 
                 src_branch_short_name = sh (
                   script: "echo ${src_branch} | cut -d '/' -f 2",
