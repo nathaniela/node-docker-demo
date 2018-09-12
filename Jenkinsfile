@@ -85,7 +85,7 @@ pipeline {
                   sh "docker login -u nathanielassis -p ${PW1} https://registry.hub.docker.com"
                   sh "docker pull ${registry}:rc-${src_branch_short_name}-${src_commit}"
                   sh "docker tag ${registry}:rc-${src_branch_short_name}-${src_commit} ${registry}:${src_branch_short_name}"
-                  sh "docker push(${registry}:${src_branch_short_name})"
+                  sh "docker push ${registry}:${src_branch_short_name}"
                 }
                 //pullAndPushImage("${env.registry}:rc-${src_branch_short_name}-${src_commit}", "${env.registry}:${gitReleaseTag}")
 
