@@ -72,7 +72,7 @@ pipeline {
         steps {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-              if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()") {
+              if ( "${GIT_BRANCH_TYPE}" == 'master' && "${check_merge_commit()}") {
                 src_commit = get_merge_source_commit()
                 //src_branch = get_branch_by_commit("${src_commit}")
                 src_branch = 'release/v1.0.1'
