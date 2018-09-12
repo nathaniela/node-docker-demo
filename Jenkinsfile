@@ -166,7 +166,7 @@ def get_branch_by_commit(src_commit) {
       returnStdout: true
       ).trim()
     */
-    println "get_branch_by_commit: source branch is: ${src_branch}"
+    echo "get_branch_by_commit: source branch is: ${src_branch}"
     return "${src_branch}"
 }
 
@@ -177,7 +177,7 @@ def check_merge_commit() {
     */
     echo "check_merge_commit: Checking if commit is part of a Merge."
     def merge = sh returnStatus: true, script: "git show --summary HEAD | grep -q ^Merge:"
-
+    /* TODO: if merge == 0 then log 'true' elase log 'false' */
     echo "check_merge_commit: is commit part of a Merge, ${merge}"
     return "${merge}"
 }
