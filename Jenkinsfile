@@ -1,4 +1,4 @@
-
+#!/usr/bin/env groovy
 pipeline {
   options {
     /* Build auto timeout */
@@ -152,6 +152,7 @@ def get_merge_source_commit() {
     script: "git show --summary HEAD | grep ^Merge: | awk \'{print \$3}\'",
     returnStdout: true
     ).trim()
+  echo "get_merge_source_commit: merge source commit is: ${src_commit}"
   return "${src_commit}"
 }
 
