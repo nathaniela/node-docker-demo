@@ -1,4 +1,4 @@
-
+#!/usr/bin/env groovy
 pipeline {
   options {
     /* Build auto timeout */
@@ -74,8 +74,8 @@ pipeline {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
               if ( "${GIT_BRANCH_TYPE}" == 'master' && "${check_merge_commit()}") {
                 src_commit = get_merge_source_commit()
-                src_branch = get_branch_by_commit("${src_commit}")
-                //src_branch = 'release/v1.0.1'
+                src_branch = sh "./scipts/get_branch_by_commit.sh ${src_commit}"
+
                 src_branch_short_name = sh (
                   script: "echo ${src_branch} | cut -d '/' -f 2",
                   returnStdout: true
@@ -152,6 +152,7 @@ def get_merge_source_commit() {
     script: "git show --summary HEAD | grep ^Merge: | awk \'{print \$3}\'",
     returnStdout: true
     ).trim()
+  echo "get_merge_source_commit: merge source commit is: ${src_commit}"
   return "${src_commit}"
 }
 
