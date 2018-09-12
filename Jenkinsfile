@@ -75,10 +75,6 @@ pipeline {
               if ( "${GIT_BRANCH_TYPE}" == 'master' && "${check_merge_commit()}") {
                 src_commit = get_merge_source_commit()
                 src_branch = get_branch_by_commit("${src_commit}")
-                /*src_branch_short_name = sh (
-                  script: "echo ${src_branch} | cut -d '/' -f 2",
-                  returnStdout: true
-                ).trim()*/
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${gitReleaseTag}"
                 withCredentials([string(credentialsId: 'docker-registry-password', variable: 'PW1')]) {
                   try {
@@ -89,7 +85,7 @@ pipeline {
                   } finally {
                     sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
                   }
-                }                
+                }
 
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${gitReleaseTag} == null" ) {
                 echo "WARNING: no release TAG found, doing nothing."
@@ -179,7 +175,12 @@ def check_merge_commit() {
     */
     echo "check_merge_commit: Checking if commit is part of a Merge."
     def merge = sh returnStatus: true, script: "git show --summary HEAD | grep -q ^Merge:"
-    /* TODO: if merge == 0 then log 'true' elase log 'false' */
-    echo "check_merge_commit: is commit part of a Merge, ${merge}"
-    return "${merge}"
+
+    if ( "$merge" == 0 ) {
+        echo "check_merge_commit: commit is part of a pull request == true"
+        return true
+    } else {
+        echo "check_merge_commit: commit is NOT part of a pull request == false"
+        return false
+    }
 }
