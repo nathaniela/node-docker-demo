@@ -1,4 +1,4 @@
-#!/usr/bin/env groovy
+gitBranch#!/usr/bin/env groovy
 pipeline {
   options {
     /* Build auto timeout */
@@ -25,26 +25,29 @@ pipeline {
           GIT_BRANCH_TYPE = get_branch_type("${scmVars.GIT_BRANCH}")
           echo "GIT_BRANCH_TYPE is: ${GIT_BRANCH_TYPE}"
 
-          DEPLOY_ENV = get_branch_deployment_environment("${GIT_BRANCH_TYPE}")
-          echo "DEPLOY_ENV is: ${DEPLOY_ENV}"
+          gitBranchType = get_branch_type("${scmVars.GIT_BRANCH}")
+          echo "gitBranchType is: ${gitBranchType}"
 
-          gitReleaseTag = sh (
+          deployEnv = get_branch_deployment_environment("${gitBranchType}")
+          echo "Deployment Environment is: ${deployEnv}"
+
+          gitReleaseTag = sh ( /* TODO: get rid of this logic */
             script: "git describe --tags --abbrev=0 --always",
             returnStdout: true
             ).trim()
           echo "gitReleaseTag is: ${gitReleaseTag}"
 
-          GIT_BRANCH = sh (
+          gitBranch = sh (
             script: "echo ${scmVars.GIT_BRANCH} | cut -d '/' -f 2",
             returnStdout: true
           ).trim()
-          echo "GIT_BRANCH is: ${GIT_BRANCH}"
+          echo "gitBranch is: ${gitBranch}"
 
-          GIT_COMMIT = sh (
+          gitCommit = sh (
             script: "git rev-parse --short HEAD",
             returnStdout: true
             ).trim()
-          echo "GIT_COMMIT is: ${GIT_COMMIT}"
+          echo "gitCommit is: ${gitCommit}"
 
         }
       }
@@ -55,7 +58,7 @@ pipeline {
           echo "Building application and Docker image"
           script {
             // building docker image only if branch is either development or release (staging)
-            if ( "${GIT_BRANCH_TYPE}" == 'dev' || "${GIT_BRANCH_TYPE}" == 'release' ) {
+            if ( "${gitBranchType}" == 'dev' || "${gitBranchType}" == 'release' ) {
               image = docker.build("${env.registry}")
             } else {
               echo "Only develop, release branches run docker build, skipping."
@@ -74,32 +77,32 @@ pipeline {
         steps {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-              if ( "${GIT_BRANCH_TYPE}" == 'master' && "${check_merge_commit()}") {
-                src_commit = get_merge_source_commit()
-                src_branch = get_branch_by_commit("${src_commit}")
-                echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${gitReleaseTag}"
+              if ( "${gitBranchType}" == 'master' && "${check_merge_commit()}") {
+                srcCommit = get_merge_source_commit()
+                srcBranch = get_branch_by_commit()
+                echo "Please notice the source commit (${srcCommit}), source branch (${srcBranch}), and git tag ${gitReleaseTag}"
                 withCredentials([string(credentialsId: 'docker-registry-password', variable: 'PW1')]) {
                   try {
                     sh "docker login -u nathanielassis -p ${PW1} https://registry.hub.docker.com"
-                    sh "docker pull registry.hub.docker.com/${registry}:rc-${src_branch}-${src_commit}"
-                    sh "docker tag registry.hub.docker.com/${registry}:rc-${src_branch}-${src_commit} registry.hub.docker.com/${registry}:${src_branch}"
-                    sh "docker push registry.hub.docker.com/${registry}:${src_branch}"
+                    sh "docker pull registry.hub.docker.com/${registry}:rc-${srcBranch}-${srcCommit}"
+                    sh "docker tag registry.hub.docker.com/${registry}:rc-${srcBranch}-${srcCommit} registry.hub.docker.com/${registry}:${srcBranch}"
+                    sh "docker push registry.hub.docker.com/${registry}:${srcBranch}"
                   } finally {
                     sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
                   }
                 }
 
-              } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${gitReleaseTag} == null" ) {
+              } else if ( "${gitBranchType} == 'master' && ${gitReleaseTag} == null" ) {
                 echo "WARNING: no release TAG found, doing nothing."
               }
-              if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
+              if ( "${gitBranchType}" == 'release' ) {
                 echo "Pushing docker image to ${registry} from release branch."
                 /* rc - release candidate */
-                image.push("rc-${GIT_BRANCH}-${GIT_COMMIT}")
+                image.push("rc-${gitBranch}-${gitCommit}")
               }
-              if ( "${GIT_BRANCH_TYPE}" == 'dev' ) {
+              if ( "${gitBranchType}" == 'dev' ) {
                 echo "Pushing docker image to ${registry} from develop branch."
-                image.push("${GIT_BRANCH_TYPE}-${GIT_COMMIT}")
+                image.push("${gitBranchType}-${gitCommit}")
               }
             }
           }
@@ -144,15 +147,16 @@ def get_branch_deployment_environment(String branch_type) {
 }
 
 def get_merge_source_commit() {
-  src_commit = sh (
+  srcCommit = sh (
     script: "git show --summary HEAD | grep ^Merge: | awk \'{print \$3}\'",
     returnStdout: true
     ).trim()
-  echo "get_merge_source_commit: merge source commit is: ${src_commit}"
-  return "${src_commit}"
+
+  echo "get_merge_source_commit: merge source commit is: ${srcCommit}"
+  return "${srcCommit}"
 }
 
-def get_branch_by_commit(src_commit) {
+def get_branch_by_commit() {
     /*
     Find the source branch of a commit which is the source of a pull request
     We exclude the master branch as it will always appear as part of the merge commit
@@ -161,11 +165,7 @@ def get_branch_by_commit(src_commit) {
       script: "git show --summary HEAD | grep 'pull request' | cut -d '/' -f 3",
       returnStdout: true
     ).trim()
-    /*src_branch = sh (
-      script: "git branch --contains ${src_commit} | grep -v master",
-      returnStdout: true
-      ).trim()
-    */
+
     echo "get_branch_by_commit: source branch is: ${out}"
     return "${out}"
 }
