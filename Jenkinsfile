@@ -20,6 +20,8 @@ pipeline {
           echo "Check out code"
           scmVars = checkout scm
 
+          echo "scmVars is: ${scmVars}"
+
           GIT_BRANCH_TYPE = get_branch_type("${scmVars.GIT_BRANCH}")
           echo "GIT_BRANCH_TYPE is: ${GIT_BRANCH_TYPE}"
 
