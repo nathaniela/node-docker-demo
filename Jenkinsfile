@@ -81,9 +81,12 @@ pipeline {
                   returnStdout: true
                 ).trim()
                 echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${gitReleaseTag}"
-                sh "docker pull ${registry}-rc-${src_branch_short_name}-${src_commit}"
-                sh "docker tag ${registry}:rc-${src_branch_short_name}-${src_commit} ${registry}:${gitReleaseTag}"
-                sh "docker push(${registry}:${gitReleaseTag})"
+                withCredentials([string(credentialsId: 'docker-registry-password', variable: 'PW1')]) {
+                  sh "docker login -u nathanielassis -p ${PW1} https://registry.hub.docker.com"
+                  sh "docker pull ${registry}:rc-${src_branch_short_name}-${src_commit}"
+                  sh "docker tag ${registry}:rc-${src_branch_short_name}-${src_commit} ${registry}:${gitReleaseTag}"
+                  sh "docker push(${registry}:${gitReleaseTag})"
+                }
                 //pullAndPushImage("${env.registry}:rc-${src_branch_short_name}-${src_commit}", "${env.registry}:${gitReleaseTag}")
 
               } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${gitReleaseTag} == null" ) {
