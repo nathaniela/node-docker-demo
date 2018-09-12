@@ -167,7 +167,7 @@ def get_branch_by_commit(src_commit) {
       ).trim()
     */
     echo "get_branch_by_commit: source branch is: ${out}"
-    return "${src_branch}"
+    return "${out}"
 }
 
 def check_merge_commit() {
