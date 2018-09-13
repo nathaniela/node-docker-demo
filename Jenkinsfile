@@ -10,6 +10,10 @@ pipeline {
     registryCredential = 'dockerhub'
   }
 
+  triggers {
+    pollSCM ''
+  }
+
   agent { node { label 'master' } }
 
   // Pipeline stages
