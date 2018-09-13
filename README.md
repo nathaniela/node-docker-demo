@@ -10,3 +10,4 @@
 
 ### v1.0.1
 - release branch pipeline flow.
+- Git webhook integration
