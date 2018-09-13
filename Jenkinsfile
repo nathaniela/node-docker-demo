@@ -1,7 +1,10 @@
 #!/usr/bin/env groovy
 pipeline {
   options {
-    /* Build auto timeout */
+    // Set log rotation, timeout and timestamps in the console
+    buildDiscarder(logRotator(numToKeepStr:'10'))
+    disableConcurrentBuilds()
+    timestamps()
     timeout(time: 60, unit: 'MINUTES')
   }
 
@@ -12,6 +15,7 @@ pipeline {
 
   triggers {
     pollSCM('')
+    githubBranches events: [], spec: '', triggerMode: 'HEAVY_HOOKS'
   }
 
   agent { node { label 'master' } }
