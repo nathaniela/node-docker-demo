@@ -1,4 +1,4 @@
-gitBranch#!/usr/bin/env groovy
+#!/usr/bin/env groovy
 pipeline {
   options {
     /* Build auto timeout */
