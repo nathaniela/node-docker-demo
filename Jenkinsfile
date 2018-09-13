@@ -12,6 +12,7 @@ pipeline {
 
   triggers {
     pollSCM ''
+    githubPush
   }
 
   agent { node { label 'master' } }
