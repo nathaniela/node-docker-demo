@@ -14,8 +14,7 @@ pipeline {
   }
 
   triggers {
-    pollSCM('')
-    githubBranches events: [], spec: '', triggerMode: 'HEAVY_HOOKS'
+    pollSCM('H/2 * * * *')
   }
 
   agent { node { label 'master' } }
