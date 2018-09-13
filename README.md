@@ -3,7 +3,8 @@
 A generic Gitflow multibranch Jenkins pipeline
 
 Docker Build when:
-1. push to develop (dev-<git commit>)
+1. push to develop (dev-[git commit])
+2. push to release/v[version] (rc-[version]-[git commit])
 
 ## releases
 
