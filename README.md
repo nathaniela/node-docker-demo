@@ -2,6 +2,9 @@
 
 A generic Gitflow multibranch Jenkins pipeline
 
+Docker Build when:
+1. push to develop (dev-<git commit>)
+
 ## releases
 
 ### v1.0.0
