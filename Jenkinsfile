@@ -1,13 +1,20 @@
-
+#!/usr/bin/env groovy
 pipeline {
   options {
-    /* Build auto timeout */
+    // Set log rotation, timeout and timestamps in the console
+    buildDiscarder(logRotator(numToKeepStr:'10'))
+    disableConcurrentBuilds()
+    timestamps()
     timeout(time: 60, unit: 'MINUTES')
   }
 
   environment {
     registry = "nathanielassis/node-docker-demo"
     registryCredential = 'dockerhub'
+  }
+
+  triggers {
+    pollSCM('H/2 * * * *')
   }
 
   agent { node { label 'master' } }
@@ -20,29 +27,34 @@ pipeline {
           echo "Check out code"
           scmVars = checkout scm
 
+          echo "scmVars is: ${scmVars}"
+
           GIT_BRANCH_TYPE = get_branch_type("${scmVars.GIT_BRANCH}")
           echo "GIT_BRANCH_TYPE is: ${GIT_BRANCH_TYPE}"
 
-          DEPLOY_ENV = get_branch_deployment_environment("${GIT_BRANCH_TYPE}")
-          echo "DEPLOY_ENV is: ${DEPLOY_ENV}"
+          gitBranchType = get_branch_type("${scmVars.GIT_BRANCH}")
+          echo "gitBranchType is: ${gitBranchType}"
 
-          gitReleaseTag = sh (
+          deployEnv = get_branch_deployment_environment("${gitBranchType}")
+          echo "Deployment Environment is: ${deployEnv}"
+
+          gitReleaseTag = sh ( /* TODO: get rid of this logic */
             script: "git describe --tags --abbrev=0 --always",
             returnStdout: true
             ).trim()
           echo "gitReleaseTag is: ${gitReleaseTag}"
 
-          GIT_BRANCH = sh (
+          gitBranch = sh (
             script: "echo ${scmVars.GIT_BRANCH} | cut -d '/' -f 2",
             returnStdout: true
           ).trim()
-          echo "GIT_BRANCH is: ${GIT_BRANCH}"
+          echo "gitBranch is: ${gitBranch}"
 
-          GIT_COMMIT = sh (
+          gitCommit = sh (
             script: "git rev-parse --short HEAD",
             returnStdout: true
             ).trim()
-          echo "GIT_COMMIT is: ${GIT_COMMIT}"
+          echo "gitCommit is: ${gitCommit}"
 
         }
       }
@@ -53,7 +65,7 @@ pipeline {
           echo "Building application and Docker image"
           script {
             // building docker image only if branch is either development or release (staging)
-            if ( "${GIT_BRANCH_TYPE}" == 'dev' || "${GIT_BRANCH_TYPE}" == 'release' ) {
+            if ( "${gitBranchType}" == 'dev' || "${gitBranchType}" == 'release' ) {
               image = docker.build("${env.registry}")
             } else {
               echo "Only develop, release branches run docker build, skipping."
@@ -72,29 +84,32 @@ pipeline {
         steps {
           script {
             docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-              if ( "${GIT_BRANCH_TYPE}" == 'master' && "check_merge_commit()" && "${}" != null) {
-                src_commit = get_merge_source_commit()
-                //src_branch = get_branch_by_commit("${src_commit}")
-                src_branch = 'release/v1.0.1'
-                src_branch_short_name = sh (
-                  script: "echo ${src_branch} | cut -d '/' -f 2",
-                  returnStdout: true
-                ).trim()
-                echo "Please notice the source commit (${src_commit}), source branch (${src_branch}), and git tag ${gitReleaseTag}"
-                //tag the container with the release tag.
-                pullAndPushImage("${env.registry}:rc-${src_branch_short_name}-${src_commit}", "${env.registry}:${gitReleaseTag}")
+              if ( "${gitBranchType}" == 'master' && "${check_merge_commit()}") {
+                srcCommit = get_merge_source_commit()
+                srcBranch = get_branch_by_commit()
+                echo "Please notice the source commit (${srcCommit}), source branch (${srcBranch}), and git tag ${gitReleaseTag}"
+                withCredentials([string(credentialsId: 'docker-registry-password', variable: 'PW1')]) {
+                  try {
+                    sh "docker login -u nathanielassis -p ${PW1} https://registry.hub.docker.com"
+                    sh "docker pull registry.hub.docker.com/${registry}:rc-${srcBranch}-${srcCommit}"
+                    sh "docker tag registry.hub.docker.com/${registry}:rc-${srcBranch}-${srcCommit} registry.hub.docker.com/${registry}:${srcBranch}"
+                    sh "docker push registry.hub.docker.com/${registry}:${srcBranch}"
+                  } finally {
+                    sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
+                  }
+                }
 
-              } else if ( "${GIT_BRANCH_TYPE} == 'master' && ${gitReleaseTag} == null" ) {
+              } else if ( "${gitBranchType} == 'master' && ${gitReleaseTag} == null" ) {
                 echo "WARNING: no release TAG found, doing nothing."
               }
-              if ( "${GIT_BRANCH_TYPE}" == 'release' ) {
+              if ( "${gitBranchType}" == 'release' ) {
                 echo "Pushing docker image to ${registry} from release branch."
                 /* rc - release candidate */
-                image.push("rc-${GIT_BRANCH}-${GIT_COMMIT}")
+                image.push("rc-${gitBranch}-${gitCommit}")
               }
-              if ( "${GIT_BRANCH_TYPE}" == 'dev' ) {
+              if ( "${gitBranchType}" == 'dev' ) {
                 echo "Pushing docker image to ${registry} from develop branch."
-                image.push("${GIT_BRANCH_TYPE}-${GIT_COMMIT}")
+                image.push("${gitBranchType}-${gitCommit}")
               }
             }
           }
@@ -139,24 +154,27 @@ def get_branch_deployment_environment(String branch_type) {
 }
 
 def get_merge_source_commit() {
-  src_commit = sh (
+  srcCommit = sh (
     script: "git show --summary HEAD | grep ^Merge: | awk \'{print \$3}\'",
     returnStdout: true
     ).trim()
-  return "${src_commit}"
+
+  echo "get_merge_source_commit: merge source commit is: ${srcCommit}"
+  return "${srcCommit}"
 }
 
-def get_branch_by_commit(src_commit) {
+def get_branch_by_commit() {
     /*
-    Find the source branch of a commit
+    Find the source branch of a commit which is the source of a pull request
     We exclude the master branch as it will always appear as part of the merge commit
     */
-    src_branch = sh (
-      script: "git branch --contains ${src_commit} | grep -v master",
+    def out = sh (
+      script: "git show --summary HEAD | grep 'pull request' | cut -d '/' -f 3",
       returnStdout: true
-      ).trim()
-    echo "Source branch found: ${src_branch}"
-    return "${src_branch}"
+    ).trim()
+
+    echo "get_branch_by_commit: source branch is: ${out}"
+    return "${out}"
 }
 
 def check_merge_commit() {
@@ -164,52 +182,14 @@ def check_merge_commit() {
     If the commit is a result of a Merge,
     it will return the commit id and the branch name which are the source of the merge.
     */
+    echo "check_merge_commit: Checking if commit is part of a Merge."
     def merge = sh returnStatus: true, script: "git show --summary HEAD | grep -q ^Merge:"
 
-    return "${merge}"
-}
-
-/**
- * If a production tag is found see if it is found in the ecr repository.
-*/
-Boolean repoHasTaggedImage(String target) {
-  // deconstruct target
-  // todo would be better to have these variables passed to the function
-  (ecrEndpoint, tag) = target.split(':')
-  region = ecrEndpoint.split(/\./)[3]
-  repository = ecrEndpoint.split('/')[1]
-
-    // check if the image exists
-  try {
-      image = sh(
-          returnStdout: true,
-          script: "aws ecr describe-images \
-          --profile=liveperson_prod \
-          --repository-name=${repository} \
-          --region=${region} \
-          --image-ids=\"imageTag=${tag}\""
-          )
-      // return without pushing and pulling
-      echo "Image found:"
-      echo image
-      return true
-  } catch (Exception e) {
-      echo "Image not found in repository."
-  }
-  return false
-}
-
-def pullAndPushImage(source, target){
-
-  //if (repoHasTaggedImage(target) == true)
-  //  return true
-  docker.withRegistry("https://registry.hub.docker.com", "${env.registryCredential}") {
-    try {
-      sh "docker pull ${source}"
-      sh "docker tag ${source} ${target}"
-      sh "docker push ${target}"
-    } finally {
-      sh 'docker images | egrep "(day|week|month|year)" | awk \'{ print $3 }\' | xargs -rL1 docker rmi -f 2>/dev/null || true' // clean old images
+    if ( "$merge" == 0 ) {
+        echo "check_merge_commit: commit is part of a pull request == true"
+        return true
+    } else {
+        echo "check_merge_commit: commit is NOT part of a pull request == false"
+        return false
     }
-  }
 }
