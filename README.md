@@ -17,3 +17,6 @@ Docker Build when:
 ### v1.0.1
 - release branch pipeline flow.
 - Git webhook integration
+
+### v1.0.2
+- show Yakir the pipeline
