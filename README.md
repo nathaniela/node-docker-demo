@@ -1,6 +1,7 @@
 # node-deker-demo
 
 A generic Gitflow multibranch Jenkins pipeline
+TODO: add enforcement for git naming
 
 Docker Build when:
 1. push to develop (gitTag:'dev-[git commit]')
